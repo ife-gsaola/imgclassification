@@ -1,7 +1,7 @@
-Flask==1.1.2
-Pillow==8.3.2
-numpy==1.21.2
-opencv-python==4.5.3.56
-tensorflow==2.6.0
-gtts==2.2.3
-IPython==7.27.0
+Flask
+Pillow
+numpy
+opencv-python
+tensorflow
+gtts
+IPython
