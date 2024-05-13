@@ -81,5 +81,5 @@ def prediction():
         return render_template("production.html", data=f"{predicted_class}", data1=f"{confidence}")
 
 
-if __name__ == "__main__":
-    app.run(debug=True)
+if __name__=="__main__":
+    app.run(host="0.0.0.0")
