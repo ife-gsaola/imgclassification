@@ -57,18 +57,18 @@ def predict():
 
 @app.route("/prediction", methods=["POST"])
 def prediction():
-    im_path = os.path.join(app.config['UPLOAD_FOLDER'], "img.jpg")  # Path to save uploaded image
+    # Get image data from request
+    image_data = request.files['img'].read()
+    image = Image.open(io.BytesIO(image_data))
 
-    img = request.files['img']
-    img.save(im_path)
-
-    img = image.load_img(im_path, target_size=(64, 64))
-    img_array = image.img_to_array(img)
-    img_array = np.expand_dims(img_array, axis=0)
-    img_array = preprocess_input(img_array)
+    # Preprocess the image
+    image = image.resize((64, 64))
+    image_array = img_to_array(image)
+    image_array = preprocess_input(image_array)
+    image_array = np.expand_dims(image_array, axis=0)
 
     # Predict the class probabilities
-    predictions = model.predict(img_array)
+    predictions = model.predict(image_array)
 
     confidence_threshold = 0.6
     predicted_class_index = np.argmax(predictions)
@@ -79,7 +79,6 @@ def prediction():
         return render_template("production.html", data=f"Out of scope {confidence}")
     else:
         return render_template("production.html", data=f"{predicted_class}", data1=f"{confidence}")
-
 
 if __name__=="__main__":
     app.run(host="0.0.0.0")
