@@ -2,6 +2,7 @@ from flask import Flask, render_template,redirect, request,jsonify, url_for
 from werkzeug.utils import secure_filename
 from PIL import Image
 import tensorflow
+import io
 from io import BytesIO
 import base64
 import numpy as np
