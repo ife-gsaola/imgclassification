@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        /* Your CSS styles here */
+        #video {
+            border: 2px solid black;
+            width: 320px;
+            height: 240px;
+            transform: scaleX(-1); /* Flip the video horizontally */
+        }
+
+        #canvas {
+            display: none;
+        }
+
+        .camera {
+            width: 340px;
+            display: inline-block;
+        }
+
+        .output {
+            width: 340px;
+            padding-top: 20px;
+            display: none;
+        }
+
+        .button-container {
+            margin-top: 20px;
+        }
+
+        .button-container button {
+            margin: 0 10px;
+            padding: 10px 15px;
+            background-color: #8481da;
+            border: 1px solid rgba(0, 0, 0, 0.7);
+            font-size: 14px;
+            color: rgba(255, 255, 255, 1.0);
+            cursor: pointer;
+        }
+
+        .contentarea {
+            font-size: 16px;
+            font-family: Arial;
+            text-align: center;
+        }
+
+        #cameraAndOutput {
+            display: inline-block;
+            text-align: center;
+        }
+    </style>
+    <title>Web Cam App</title>
+</head>
+<body>
+    <div class="contentarea">
+        <h1>WHAT DO YOU WANT TO KNOW?</h1>
+        <div id="cameraAndOutput">
+            <div class="camera" id="cameraDiv">
+                <video id="video">Video stream not available.</video>
+                <button id="startbutton">Take photo and upload</button>
+            </div>
+            <div class="output" id="outputDiv">
+                <img id="photo" alt="The screen capture will appear in this box.">
+            </div>
+            <div class="button-container">
+                <button id="predictbutton" disabled>Predict</button>
+            </div>
+
+            <h2>Upload Image</h2>
+            <form id="uploadForm" action="prediction" method="POST" enctype="multipart/form-data">
+                <label for="img" class="upload-label"></label>
+                <input type="file" id="img" name="img" onchange="previewImage(event)">
+                <input type="submit" name="btn" value="Predict">
+            </form>
+            <div id="imagePreview"></div>
+        </div>
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <script>
+        function previewImage(event) {
+            var reader = new FileReader();
+            reader.onload = function() {
+                var output = document.getElementById('imagePreview');
+                output.innerHTML = '<img src="' + reader.result + '" style="max-width: 300px; max-height: 300px;">';
+            };
+            reader.readAsDataURL(event.target.files[0]);
+        }
+
+        (function() {
+            var width = 320;
+            var height = 0;
+            var streaming = false;
+            var video = null;
+            var canvas = null;
+            var photo = null;
+            var startbutton = null;
+            var predictbutton = null;
+            var cameraDiv = null;
+            var outputDiv = null;
+
+            function startup() {
+                video = document.getElementById('video');
+                canvas = document.getElementById('canvas');
+                photo = document.getElementById('photo');
+                startbutton = document.getElementById('startbutton');
+                predictbutton = document.getElementById('predictbutton');
+                cameraDiv = document.getElementById('cameraDiv');
+                outputDiv = document.getElementById('outputDiv');
+
+                navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: false
+                })
+                .then(function(stream) {
+                    video.srcObject = stream;
+                    video.play();
+                })
+                .catch(function(err) {
+                    console.log("An error occurred: " + err);
+                });
+
+                video.addEventListener('canplay', function(ev) {
+                    if (!streaming) {
+                        height = video.videoHeight / (video.videoWidth / width);
+
+                        if (isNaN(height)) {
+                            height = width / (4 / 3);
+                        }
+
+                        video.setAttribute('width', width);
+                        video.setAttribute('height', height);
+                        canvas.setAttribute('width', width);
+                        canvas.setAttribute('height', height);
+                        streaming = true;
+                    }
+                }, false);
+
+                startbutton.addEventListener('click', function(ev) {
+                    takepicture();
+                    ev.preventDefault();
+                }, false);
+
+                predictbutton.addEventListener('click', function(ev) {
+                    predict();
+                    ev.preventDefault();
+                }, false);
+            }
+
+            function takepicture() {
+                var context = canvas.getContext('2d');
+                if (width && height) {
+                    canvas.width = width;
+                    canvas.height = height;
+                    context.drawImage(video, 0, 0, width, height);
+
+                    // Show captured image
+                    photo.src = canvas.toDataURL('image/jpeg');
+                    outputDiv.style.display = 'block';
+                    cameraDiv.style.display = 'none'; // Hide the video stream
+
+                    // Stop the video stream
+                    if (video.srcObject) {
+                        video.srcObject.getTracks().forEach(track => {
+                            track.stop();
+                        });
+                    }
+
+                    // Enable the predict button
+                    predictbutton.disabled = false;
+                }
+            }
+
+            function speakPrediction(prediction) {
+                // Speech Synthesis API
+                var synth = window.speechSynthesis;
+                var utterance = new SpeechSynthesisUtterance(prediction);
+
+                // Delay before speaking (in milliseconds)
+                var delay = 500; // Adjust as needed
+
+                setTimeout(function() {
+                    synth.speak(utterance);
+                }, delay);
+            }
+
+            function predict() {
+                var canvasData = canvas.toDataURL('image/jpeg');
+                
+                // Extract base64 image data
+                var base64Image = canvasData.replace(/^data:image\/(png|jpeg);base64,/, '');
+
+                // Send the image data to Flask backend for prediction
+                var xhr = new XMLHttpRequest();
+                xhr.open("POST", "/predict", true);
+                xhr.setRequestHeader("Content-Type", "application/json");
+
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === XMLHttpRequest.DONE) {
+                        if (xhr.status === 200) {
+                            // Display prediction result
+                            var response = JSON.parse(xhr.responseText);
+                            alert(response.prediction);
+                            speakPrediction(response.prediction);
+
+                            // Reset UI
+                            outputDiv.style.display = 'none';
+                            cameraDiv.style.display = 'block';
+
+                            // Start the camera stream again
+                            navigator.mediaDevices.getUserMedia({
+                                video: true,
+                                audio: false
+                            })
+                            .then(function(stream) {
+                                video.srcObject = stream;
+                                video.play();
+                            })
+                            .catch(function(err) {
+                                console.log("An error occurred: " + err);
+                            });
+
+                            // Enable the predict button
+                            predictbutton.disabled = false;
+                        } else {
+                            alert('Error: ' + xhr.statusText);
+                        }
+                    }
+                };
+
+                var data = JSON.stringify({ image_data: base64Image });
+                xhr.send(data);
+            }
+
+            window.addEventListener('load', startup, false);
+        })();
+    </script>
+</body>
+</html>

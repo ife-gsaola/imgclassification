@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Production</title>
+    <script>
+        function speakPrediction(prediction) {
+            // Create a new speech synthesis object
+            var synth = window.speechSynthesis;
+
+            // Create a new utterance with the prediction text
+            var utterance = new SpeechSynthesisUtterance(prediction);
+
+            // Speak out the prediction
+            synth.speak(utterance);
+        }
+
+        // Call speakPrediction() function when the page finishes loading
+        window.onload = function() {
+            // Retrieve the prediction text from the DOM
+            var predictionText = document.getElementById('predictionText').textContent;
+
+            // Speak out the prediction
+            speakPrediction(predictionText);
+        };
+    </script>
+</head>
+<body>
+   <center>
+        <h1>Welcome to prediction</h1>
+
+        <!-- Use a hidden element to store the prediction text -->
+        <h3 id="predictionText" style="display: none;">{{data}}</h3>
+
+        <!-- Display the prediction text for debugging purposes -->
+        <h3>Prediction is: {{data}}</h3>
+    </center>
+</body>
+</html>

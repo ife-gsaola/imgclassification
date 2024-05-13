@@ -1,0 +1,44 @@
+#video {
+    border: 2px solid black;
+    width: 320px;
+    height: 240px;
+    transform: scaleX(-1); /* Flip the video horizontally */
+}
+
+#canvas {
+    display: none;
+}
+
+.camera {
+    width: 340px;
+    display: inline-block;
+    text-align: left; /* Align the camera frame to the left */
+}
+
+.output {
+    width: 340px;
+    padding-top: 20px;
+    display: none;
+}
+
+#startbutton {
+    display: block;
+    margin: 0 auto; /* Center the button horizontally */
+    padding: 15px;
+    background-color: #8481da;
+    border: 1px solid rgba(0, 0, 0, 0.7);
+    font-size: 14px;
+    color: rgba(255, 255, 255, 1.0);
+    cursor: pointer;
+}
+
+.contentarea {
+    font-size: 16px;
+    font-family: Arial;
+    text-align: center;
+}
+
+#cameraAndOutput {
+    display: inline-block;
+    text-align: center;
+}
